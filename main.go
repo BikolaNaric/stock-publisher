@@ -42,7 +42,11 @@ func stockPublisher(conn *amqp.Connection, stock string) {
 	src := rand.NewSource(time.Now().UnixNano())
 	localRand := rand.New(src) // Create a local random generator
 
-	ticker := time.NewTicker(1 * time.Millisecond)
+	tickerIntervalValue := getEnvWithDefault("TICKER_INTERVAL", "1")
+	tickerInterval, err := strconv.Atoi(tickerIntervalValue)
+	failOnError(err, "Failed to parse ticker interval")
+
+	ticker := time.NewTicker(time.Duration(tickerInterval) * time.Millisecond)
 	for range ticker.C {
 		eventType := eventTypes[rand.Intn(len(eventTypes))]
 		price := randomPrice(localRand)
@@ -61,7 +65,7 @@ func stockPublisher(conn *amqp.Connection, stock string) {
 	}
 }
 
-// getEnvWithDefault returns the value of an environment variable "RABBITMQ_URL" or a default value if the environment variable is not set
+// getEnvWithDefault returns the value of an environment variable or a default value if the environment variable is not set
 func getEnvWithDefault(key, fallback string) string {
 	value := os.Getenv(key)
 	if value == "" {

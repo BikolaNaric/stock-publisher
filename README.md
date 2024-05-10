@@ -42,3 +42,4 @@ A step-by-step series of examples that tell you how to get a development environ
 ### Environment Variables
 
 - `RABBITMQ_URL`: The URL of the RabbitMQ server (default: `amqp://stockmarket:supersecret123@localhost:5672/`)
+- `TICKER_INTERVAL`: The interval in milliseconds between producing new stock price (default: `1`)
