@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"math/rand"
 	"os"
@@ -20,6 +21,12 @@ func failOnError(err error, msg string) {
 // randomPrice generates a random price between $50 and $550
 func randomPrice(r *rand.Rand) float64 {
 	return r.Float64()*500 + 50
+}
+
+type StockEvent struct {
+	Company   string  `json:"company"`
+	EventType string  `json:"eventType"`
+	Price     float64 `json:"price"`
 }
 
 // generate random buy/sell events for a stock
@@ -50,18 +57,26 @@ func stockPublisher(conn *amqp.Connection, stock string) {
 	for range ticker.C {
 		eventType := eventTypes[rand.Intn(len(eventTypes))]
 		price := randomPrice(localRand)
-		message := stock + " " + eventType + " " + strconv.FormatFloat(price, 'f', 2, 64)
+		stockEvent := StockEvent{
+			Company:   stock,
+			EventType: eventType,
+			Price:     price,
+		}
+
+		jsonBody, err := json.Marshal(stockEvent)
+		failOnError(err, "Error marshaling JSON")
+
 		err = ch.Publish(
 			"",     // exchange
 			q.Name, // routing key
 			false,  // mandatory
 			false,  // immediate
 			amqp.Publishing{
-				ContentType: "text/plain",
-				Body:        []byte(message),
+				ContentType: "application/json",
+				Body:        jsonBody,
 			})
 		failOnError(err, "Failed to publish a message")
-		log.Printf(" [x] Sent %s", message)
+		log.Printf(" [x] Sent %s", jsonBody)
 	}
 }
 
